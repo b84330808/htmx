@@ -52,12 +52,14 @@
                     if (id) {
                         let existing = document.getElementById(id);
                         if (existing) {
+                            if (existing === firstChild) firstChild = newEl;
                             existing.replaceWith(newEl);
                             continue;
                         }
                     }
                     
-                    let newKey = getKey(newEl);
+                    // only place new elements by key when sorting; otherwise append or prepend them
+                    let newKey = swapSpec.sort && getKey(newEl);
                     if (!newKey) {
                         if (swapSpec.prepend) {
                             target.insertBefore(newEl, firstChild);

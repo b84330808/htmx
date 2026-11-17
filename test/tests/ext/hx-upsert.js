@@ -177,6 +177,33 @@ describe('hx-upsert extension', function() {
 
 
 
+    it('appends new elements in response order without sort', async function () {
+        mockResponse('GET', '/test', '<div id="item-2">New 2</div><div id="item-3">Updated 3</div>')
+        let div = createProcessedHTML('<div hx-get="/test" hx-swap="upsert"><div id="item-1">One</div><div id="item-3">Three</div></div>');
+        div.click()
+        await htmx.timeout(20)
+        assert.deepEqual(Array.from(div.children, c => c.id), ['item-1', 'item-3', 'item-2'])
+        assert.equal(div.querySelector('#item-3').textContent, 'Updated 3')
+    })
+
+    it('prepends new elements without sort', async function () {
+        mockResponse('GET', '/test', '<div id="item-2">New 2</div><div id="item-3">Updated 3</div>')
+        let div = createProcessedHTML('<div hx-get="/test" hx-swap="upsert prepend"><div id="item-1">One</div><div id="item-3">Three</div></div>');
+        div.click()
+        await htmx.timeout(20)
+        assert.deepEqual(Array.from(div.children, c => c.id), ['item-2', 'item-1', 'item-3'])
+    })
+
+    it('prepends after the first child is updated in the same response', async function () {
+        mockResponse('GET', '/test', '<div id="item-1">Updated 1</div><div>No Key</div>')
+        let div = createProcessedHTML('<div hx-get="/test" hx-swap="upsert prepend"><div id="item-1">One</div></div>');
+        div.click()
+        await htmx.timeout(20)
+        assert.equal(div.children.length, 2)
+        assert.equal(div.children[0].textContent, 'No Key')
+        assert.equal(div.children[1].textContent, 'Updated 1')
+    })
+
     it('sorts descending with sort:desc', async function () {
         mockResponse('GET', '/test', '<div id="item-2">Two</div>')
         let div = createProcessedHTML('<div hx-get="/test" hx-swap="upsert sort:desc"><div id="item-3">Three</div><div id="item-1">One</div></div>');
@@ -196,6 +223,15 @@ describe('hx-upsert extension', function() {
         assert.equal(list.children.length, 2)
         assert.equal(list.querySelector('#item-1').textContent, 'One')
         assert.equal(list.querySelector('#item-2').textContent, 'Two')
+    })
+
+    it('hx-upsert tag without sort appends new elements', async function () {
+        mockResponse('GET', '/test', '<hx-upsert hx-target="#list"><div id="item-2">Two</div></hx-upsert>')
+        let container = createProcessedHTML('<div hx-get="/test"><div id="list"><div id="item-1">One</div><div id="item-3">Three</div></div></div>');
+        container.click()
+        await htmx.timeout(20)
+        let list = container.querySelector('#list')
+        assert.deepEqual(Array.from(list.children, c => c.id), ['item-1', 'item-3', 'item-2'])
     })
 
     it('hx-upsert tag with sort attribute', async function () {
